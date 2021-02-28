@@ -1,3 +1,4 @@
+import argparse
 import os
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -17,6 +18,14 @@ logging.basicConfig(
 
 Path("books").mkdir(parents=True, exist_ok=True)
 Path("images").mkdir(parents=True, exist_ok=True)
+
+
+def create_parser():
+    parser = argparse.ArgumentParser(description='Download books text and info by id')
+    parser.add_argument('--start_id', help='Start_id', default=1, type=int)
+    parser.add_argument('--end_id', help='End_id', default=10, type=int)
+
+    return parser
 
 
 def check_for_redirect(response):
@@ -87,7 +96,10 @@ def get_book(book_id):
 
 
 def main():
-    for book_id in range(1, 10):
+    parser = create_parser()
+    args = parser.parse_args()
+
+    for book_id in range(args.start_id, args.end_id):
         try:
             get_book(book_id)
         except requests.HTTPError:
