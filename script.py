@@ -5,6 +5,7 @@ from pathlib import Path
 import logging
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
+from urllib.parse import urljoin
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -14,9 +15,11 @@ logging.basicConfig(
 )
 
 Path("books").mkdir(parents=True, exist_ok=True)
+Path("images").mkdir(parents=True, exist_ok=True)
 
 
 def check_for_redirect(response):
+    response.raise_for_status()
     if response.status_code == 302:
         raise requests.HTTPError
 
@@ -27,6 +30,17 @@ def download_txt(url, filename, folder='books/'):
 
     valid_filename = sanitize_filename(filename)
     filename = os.path.join(folder, valid_filename)
+    with open(filename, 'wb') as file:
+        file.write(response.content)
+
+
+def download_image(url, filename, folder='images/'):
+    response = requests.get(url, verify=False)
+    response.raise_for_status()
+
+    valid_filename = sanitize_filename(filename)
+    filename = os.path.join(folder, valid_filename)
+    print(filename)
     with open(filename, 'wb') as file:
         file.write(response.content)
 
@@ -43,8 +57,12 @@ def get_book(book_id):
 
     book_text_link = f'https://tululu.org/txt.php?id={book_id}'
     book_filename = f'{book_id}. {book_title}'
-
     download_txt(book_text_link, book_filename)
+
+    book_img = soup.find('div', class_='bookimage').find('img')['src']
+    img_filename = book_img.split('/')[-1]
+    book_img_link = urljoin('https://tululu.org/', book_img)
+    download_image(book_img_link, img_filename)
 
 
 def main():
