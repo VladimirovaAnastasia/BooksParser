@@ -16,6 +16,7 @@ logging.basicConfig(
 
 Path("books").mkdir(parents=True, exist_ok=True)
 Path("images").mkdir(parents=True, exist_ok=True)
+Path("comments").mkdir(parents=True, exist_ok=True)
 
 
 def check_for_redirect(response):
@@ -40,9 +41,18 @@ def download_image(url, filename, folder='images/'):
 
     valid_filename = sanitize_filename(filename)
     filename = os.path.join(folder, valid_filename)
-    print(filename)
     with open(filename, 'wb') as file:
         file.write(response.content)
+
+
+def download_comments(book_comments, filename, folder='comments/'):
+    valid_filename = sanitize_filename(filename)
+    filename = os.path.join(folder, valid_filename)
+
+    with open(filename, 'wb') as file:
+        for comment in book_comments:
+            comment_text = comment.find('span').text + '\n'
+            file.write(comment_text.encode())
 
 
 def get_book(book_id):
@@ -63,6 +73,10 @@ def get_book(book_id):
     img_filename = book_img.split('/')[-1]
     book_img_link = urljoin('https://tululu.org/', book_img)
     download_image(book_img_link, img_filename)
+
+    book_comments = soup.find_all('div', class_='texts')
+    if len(book_comments) > 0:
+        download_comments(book_comments, book_filename)
 
 
 def main():
