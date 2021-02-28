@@ -1,7 +1,10 @@
+import os
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from pathlib import Path
 import logging
+from bs4 import BeautifulSoup
+from pathvalidate import sanitize_filename
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -18,21 +21,38 @@ def check_for_redirect(response):
         raise requests.HTTPError
 
 
-def get_book_text(book_id):
-    url = f'https://tululu.org/txt.php?id={book_id}'
+def download_txt(url, filename, folder='books/'):
     response = requests.get(url, verify=False, allow_redirects=False)
     check_for_redirect(response)
-    filename = f'books/book_{book_id}.txt'
+
+    valid_filename = sanitize_filename(filename)
+    filename = os.path.join(folder, valid_filename)
     with open(filename, 'wb') as file:
         file.write(response.content)
 
 
+def get_book(book_id):
+    url = f'https://tululu.org/b{book_id}/'
+    response = requests.get(url, verify=False, allow_redirects=False)
+    check_for_redirect(response)
+
+    soup = BeautifulSoup(response.text, 'lxml')
+    title_tag = soup.find('h1')
+    title_text = title_tag.text.split('::')
+    [book_title, book_author] = title_text
+
+    book_text_link = f'https://tululu.org/txt.php?id={book_id}'
+    book_filename = f'{book_id}. {book_title}'
+
+    download_txt(book_text_link, book_filename)
+
+
 def main():
-    for book_id in range(10):
+    for book_id in range(1, 11):
         try:
-            get_book_text(book_id+1)
+            get_book(book_id)
         except requests.HTTPError:
-            logging.error(f'The page with id {book_id+1} was redirected')
+            logging.error(f'The page with id {book_id} was redirected')
 
 
 if __name__ == '__main__':
