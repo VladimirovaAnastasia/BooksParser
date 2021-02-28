@@ -75,8 +75,8 @@ def get_book(book_id):
     soup = BeautifulSoup(response.text, 'lxml')
     [book_title, book_author, book_genres, book_comments, book_img] = parse_book_page(soup)
 
-    logging.info(f'Заголовок: {book_title}')
-    logging.info(f'Автор: {book_author}')
+    logging.info(f'Заголовок: {book_title.strip()}')
+    logging.info(f'Автор: {book_author.strip()}')
     logging.info('Жанр:')
     for book_genre in book_genres:
         logging.info(f'{book_genre.text}')
