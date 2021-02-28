@@ -45,47 +45,53 @@ def download_image(url, filename, folder='images/'):
         file.write(response.content)
 
 
+def parse_book_page(soup):
+    title_tag = soup.find('h1')
+    title_text = title_tag.text.split('::')
+    [book_title, book_author] = title_text
+
+    book_genres = soup.find('span', class_='d_book').find_all('a')
+    book_comments = soup.find_all('div', class_='texts')
+
+    book_img = soup.find('div', class_='bookimage').find('img')['src']
+
+    return [book_title, book_author, book_genres, book_comments, book_img]
+
+
 def get_book(book_id):
     url = f'https://tululu.org/b{book_id}/'
     response = requests.get(url, verify=False, allow_redirects=False)
     check_for_redirect(response)
 
     soup = BeautifulSoup(response.text, 'lxml')
-    title_tag = soup.find('h1')
-    title_text = title_tag.text.split('::')
-    [book_title, book_author] = title_text
+    [book_title, book_author, book_genres, book_comments, book_img] = parse_book_page(soup)
 
     logging.info(f'Заголовок: {book_title}')
-
+    logging.info(f'Автор: {book_author}')
     logging.info('Жанр:')
-    book_genres = soup.find('span', class_='d_book').find_all('a')
     for book_genre in book_genres:
         logging.info(f'{book_genre.text}')
-
-    book_comments = soup.find_all('div', class_='texts')
     if len(book_comments) > 1:
         logging.info('Комментарии:')
     for comment in book_comments:
-         comment_text = comment.find('span').text
-         logging.info(f'{comment_text}')
+        comment_text = comment.find('span').text
+        logging.info(f'{comment_text}')
 
     book_text_link = f'https://tululu.org/txt.php?id={book_id}'
     book_filename = f'{book_id}. {book_title}'
     download_txt(book_text_link, book_filename)
 
-    book_img = soup.find('div', class_='bookimage').find('img')['src']
     img_filename = book_img.split('/')[-1]
     book_img_link = urljoin('https://tululu.org/', book_img)
     download_image(book_img_link, img_filename)
 
 
-
 def main():
-    for book_id in range(1, 11):
+    for book_id in range(1, 10):
         try:
             get_book(book_id)
         except requests.HTTPError:
-            logging.error(f'Страница с id {book_id} была переадресована')
+            logging.error(f'Страница с id {book_id} была переадресована. Информация не получена.')
 
 
 if __name__ == '__main__':
