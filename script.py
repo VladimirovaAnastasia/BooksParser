@@ -11,12 +11,12 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - [%(levelname)s] - %(name)s - (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s",
+    datefmt='%Y-%m-%d %H:%M:%S',
+    format="%(asctime)s - [%(levelname)s] - %(message)s",
 )
 
 Path("books").mkdir(parents=True, exist_ok=True)
 Path("images").mkdir(parents=True, exist_ok=True)
-Path("comments").mkdir(parents=True, exist_ok=True)
 
 
 def check_for_redirect(response):
@@ -45,16 +45,6 @@ def download_image(url, filename, folder='images/'):
         file.write(response.content)
 
 
-def download_comments(book_comments, filename, folder='comments/'):
-    valid_filename = sanitize_filename(filename)
-    filename = os.path.join(folder, valid_filename)
-
-    with open(filename, 'wb') as file:
-        for comment in book_comments:
-            comment_text = comment.find('span').text + '\n'
-            file.write(comment_text.encode())
-
-
 def get_book(book_id):
     url = f'https://tululu.org/b{book_id}/'
     response = requests.get(url, verify=False, allow_redirects=False)
@@ -65,6 +55,12 @@ def get_book(book_id):
     title_text = title_tag.text.split('::')
     [book_title, book_author] = title_text
 
+    logging.info(f'Заголовок: {book_title}')
+    book_comments = soup.find_all('div', class_='texts')
+    for comment in book_comments:
+        comment_text = comment.find('span').text
+        logging.info(f'{comment_text}')
+
     book_text_link = f'https://tululu.org/txt.php?id={book_id}'
     book_filename = f'{book_id}. {book_title}'
     download_txt(book_text_link, book_filename)
@@ -74,9 +70,6 @@ def get_book(book_id):
     book_img_link = urljoin('https://tululu.org/', book_img)
     download_image(book_img_link, img_filename)
 
-    book_comments = soup.find_all('div', class_='texts')
-    if len(book_comments) > 0:
-        download_comments(book_comments, book_filename)
 
 
 def main():
@@ -84,7 +77,7 @@ def main():
         try:
             get_book(book_id)
         except requests.HTTPError:
-            logging.error(f'The page with id {book_id} was redirected')
+            logging.error(f'Страница с id {book_id} была переадресована')
 
 
 if __name__ == '__main__':
