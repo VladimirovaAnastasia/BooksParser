@@ -56,10 +56,18 @@ def get_book(book_id):
     [book_title, book_author] = title_text
 
     logging.info(f'Заголовок: {book_title}')
+
+    logging.info('Жанр:')
+    book_genres = soup.find('span', class_='d_book').find_all('a')
+    for book_genre in book_genres:
+        logging.info(f'{book_genre.text}')
+
     book_comments = soup.find_all('div', class_='texts')
+    if len(book_comments) > 1:
+        logging.info('Комментарии:')
     for comment in book_comments:
-        comment_text = comment.find('span').text
-        logging.info(f'{comment_text}')
+         comment_text = comment.find('span').text
+         logging.info(f'{comment_text}')
 
     book_text_link = f'https://tululu.org/txt.php?id={book_id}'
     book_filename = f'{book_id}. {book_title}'
