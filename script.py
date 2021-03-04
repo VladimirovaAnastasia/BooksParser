@@ -10,11 +10,7 @@ from urllib.parse import urljoin
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-logging.basicConfig(
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    format="%(asctime)s - [%(levelname)s] - %(message)s",
-)
+logger = logging.getLogger()
 
 Path("books").mkdir(parents=True, exist_ok=True)
 Path("images").mkdir(parents=True, exist_ok=True)
@@ -75,16 +71,16 @@ def get_book(book_id):
     soup = BeautifulSoup(response.text, 'lxml')
     [book_title, book_author, book_genres, book_comments, book_img] = parse_book_page(soup)
 
-    logging.info(f'Заголовок: {book_title.strip()}')
-    logging.info(f'Автор: {book_author.strip()}')
-    logging.info('Жанр:')
+    logger.info(f'Заголовок: {book_title.strip()}')
+    logger.info(f'Автор: {book_author.strip()}')
+    logger.info('Жанр:')
     for book_genre in book_genres:
-        logging.info(f'{book_genre.text}')
+        logger.info(f'{book_genre.text}')
     if len(book_comments) > 1:
-        logging.info('Комментарии:')
+        logger.info('Комментарии:')
     for comment in book_comments:
         comment_text = comment.find('span').text
-        logging.info(f'{comment_text}')
+        logger.info(f'{comment_text}')
 
     book_text_link = f'https://tululu.org/txt.php?id={book_id}'
     book_filename = f'{book_id}. {book_title}'
@@ -96,6 +92,13 @@ def get_book(book_id):
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S',
+        format="%(asctime)s - [%(levelname)s] - %(message)s",
+    )
+    logger.setLevel(logging.INFO)
+
     parser = create_parser()
     args = parser.parse_args()
 
@@ -103,7 +106,7 @@ def main():
         try:
             get_book(book_id)
         except requests.HTTPError:
-            logging.error(f'Страница с id {book_id} была переадресована. Информация не получена.')
+            logger.exception(f'Страница с id {book_id} была переадресована. Информация не получена.')
 
 
 if __name__ == '__main__':
