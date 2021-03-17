@@ -28,7 +28,7 @@ def check_for_redirect(response):
 
 
 def download_txt(url, filename, book_id, folder='books/'):
-    payload = {"id": f"{book_id}"}
+    payload = {"id": book_id}
     response = requests.get(url, verify=False, allow_redirects=False, params=payload)
     check_for_redirect(response)
 
